@@ -1,0 +1,49 @@
+{
+  "user_profile": {
+    "skills": ["Python", "FastAPI", "Machine Learning", "SQL", "Docker"],
+    "experience_years": 3,
+    "experience": [
+      "Built production APIs for machine learning services.",
+      "Designed SQL-backed data workflows and Dockerized deployments."
+    ],
+    "education": ["BS Computer Science"],
+    "projects": ["Resume parser and AI career recommendation system"],
+    "desired_role": "Machine Learning Engineer",
+    "preferences": {
+      "location": "Remote"
+    }
+  },
+  "job_listings": [
+    {
+      "job_title": "Machine Learning Engineer",
+      "company": "Example AI Labs",
+      "job_description": "Build model-serving APIs and ML workflows using Python, FastAPI, SQL, and Docker.",
+      "required_skills": ["Python", "Machine Learning", "FastAPI", "Docker"],
+      "experience_level": "Mid",
+      "location": "Remote",
+      "apply_url": "https://example.com/ml-engineer",
+      "source_platform": "Provided Dataset"
+    },
+    {
+      "job_title": "Frontend Developer",
+      "company": "Bright Web Studio",
+      "job_description": "Create responsive user interfaces with React, TypeScript, and design systems.",
+      "required_skills": ["React", "TypeScript", "CSS"],
+      "experience_level": "Mid",
+      "location": "Hybrid",
+      "apply_url": "https://example.com/frontend",
+      "source_platform": "Provided Dataset"
+    },
+    {
+      "job_title": "Backend Python Developer",
+      "company": "DataFlow Systems",
+      "job_description": "Develop backend APIs, database integrations, and containerized services.",
+      "required_skills": ["Python", "FastAPI", "SQL", "Docker"],
+      "experience_level": "Mid",
+      "location": "Remote",
+      "apply_url": "https://example.com/backend-python",
+      "source_platform": "Provided Dataset"
+    }
+  ]
+}
+

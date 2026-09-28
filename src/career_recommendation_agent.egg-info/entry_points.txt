@@ -1,0 +1,3 @@
+[console_scripts]
+career-recommend = career_recommendation_agent.cli:main
+career-web = career_recommendation_agent.web_app:main

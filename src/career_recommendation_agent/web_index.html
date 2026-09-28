@@ -1,0 +1,2073 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Career Recommendation Agent</title>
+  <style>
+    :root {
+      --bg: #eef4fb;
+      --panel: #ffffff;
+      --text: #15171a;
+      --muted: #68707d;
+      --line: #dfe3e8;
+      --brand: #1769e0;
+      --brand-dark: #0d4fae;
+      --brand-soft: #eaf3ff;
+      --accent: #17b890;
+      --accent-soft: #e8fbf6;
+      --ok: #0f7a4f;
+      --bad: #b42318;
+      --shadow: 0 24px 70px rgba(24, 39, 75, 0.13);
+      --shadow-soft: 0 10px 28px rgba(24, 39, 75, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 8% -10%, rgba(23, 105, 224, 0.18), transparent 34%),
+        radial-gradient(circle at 100% 0%, rgba(23, 184, 144, 0.16), transparent 28%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #f7f9fc 100%);
+      color: var(--text);
+    }
+    body.modal-locked {
+      overflow: hidden;
+    }
+    header {
+      border-bottom: 1px solid rgba(223, 227, 232, 0.82);
+      background: rgba(255, 255, 255, 0.86);
+      padding: 24px 38px;
+      box-shadow: 0 8px 30px rgba(24, 39, 75, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(14px);
+    }
+    .brand-block {
+      min-width: 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .header-subtitle {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .brand-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      color: var(--brand-dark);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .brand-kicker::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      box-shadow: 0 0 0 5px rgba(23, 105, 224, 0.11);
+    }
+    .auth-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .auth-status {
+      color: var(--muted);
+      font-size: 13px;
+      margin-right: 4px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .auth-action {
+      width: auto;
+      margin: 0;
+      padding: 9px 13px;
+      border-radius: 999px;
+      box-shadow: 0 10px 22px rgba(23, 105, 224, 0.18);
+      font-size: 13px;
+    }
+    .auth-action.secondary {
+      background: #fff;
+      color: var(--brand-dark);
+      border: 1px solid #c8ddff;
+      box-shadow: none;
+    }
+    .ghost-action {
+      width: auto;
+      margin: 0;
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: var(--brand-dark);
+      border: 1px solid var(--line);
+      box-shadow: none;
+      font-size: 13px;
+    }
+    .ghost-action:hover {
+      background: var(--brand-soft);
+    }
+    .account-menu {
+      position: relative;
+    }
+    .account-menu-button {
+      width: auto;
+      min-width: 0;
+      margin: 0;
+      padding: 9px 12px;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      background: #ffffff;
+      color: var(--text);
+      border: 1px solid #c8ddff;
+      box-shadow: 0 10px 22px rgba(23, 105, 224, 0.12);
+    }
+    .account-dots {
+      font-size: 23px;
+      line-height: 1;
+      color: var(--brand-dark);
+      transform: translateY(-1px);
+    }
+    .account-dropdown {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 260px;
+      padding: 8px;
+      border: 1px solid rgba(214, 222, 232, 0.95);
+      border-radius: 16px;
+      background: #ffffff;
+      box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+      z-index: 30;
+    }
+    .account-summary {
+      display: block;
+      margin: 0 0 6px;
+      padding: 9px 11px;
+      color: var(--muted);
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .account-menu-item {
+      width: 100%;
+      margin: 0;
+      padding: 10px 11px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: #1756a8;
+      box-shadow: none;
+      font-size: 14px;
+      font-weight: 650;
+      text-align: left;
+    }
+    .account-menu-item:hover {
+      background: var(--brand-soft);
+    }
+    .account-menu-item.logout {
+      color: #a62a22;
+    }
+    .hidden {
+      display: none !important;
+    }
+    main {
+      display: grid;
+      grid-template-columns: minmax(360px, 540px) minmax(0, 1fr);
+      gap: 28px;
+      padding: 34px 38px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    section {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(214, 222, 232, 0.9);
+      border-radius: 16px;
+      padding: 26px;
+      box-shadow: var(--shadow-soft);
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0 0 20px;
+      letter-spacing: -0.01em;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 13px;
+      margin: 16px 0 7px;
+    }
+    .form-section {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid rgba(214, 222, 232, 0.86);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .form-section:first-child {
+      margin-top: 0;
+    }
+    .form-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: var(--brand-dark);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .form-section-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      box-shadow: 0 0 0 4px rgba(23, 105, 224, 0.1);
+    }
+    .field-group {
+      margin-top: 12px;
+    }
+    .field-group:first-of-type {
+      margin-top: 0;
+    }
+    .hidden-field {
+      display: none;
+    }
+    .field-group label {
+      margin: 0 0 6px;
+      color: #25303b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .field-hint {
+      margin: 6px 2px 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .profile-review {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid #cfe1ff;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef7ff 100%);
+      color: #25303b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .profile-review strong {
+      display: block;
+      color: var(--brand-dark);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .profile-review span {
+      color: var(--muted);
+    }
+    .smart-field {
+      background: #f8fbff;
+    }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 11px 13px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #8bbcff;
+      box-shadow: 0 0 0 4px rgba(23, 105, 224, 0.12);
+    }
+    textarea {
+      min-height: 72px;
+      resize: vertical;
+    }
+    #experience, #projects {
+      min-height: 76px;
+    }
+    #portfolio_text {
+      min-height: 58px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .row > .field-group {
+      margin-top: 0;
+    }
+    .search-settings {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f8fbff;
+      border: 1px solid #dbe8f8;
+    }
+    #submit-button {
+      margin-top: 16px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1769e0, #0e58c9 52%, #0aa98e);
+      box-shadow: 0 16px 34px rgba(23, 105, 224, 0.22);
+    }
+    button {
+      width: 100%;
+      margin-top: 18px;
+      border: 0;
+      border-radius: 11px;
+      padding: 12px 14px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--brand), #0b56c4);
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 8px 18px rgba(23, 105, 224, 0.18);
+    }
+    button:hover {
+      background: linear-gradient(135deg, var(--brand-dark), #094596);
+      box-shadow: 0 12px 26px rgba(23, 105, 224, 0.22);
+    }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: 0.65; cursor: wait; }
+    .status {
+      min-height: 22px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .error { color: var(--bad); }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid #d7e3f2;
+      border-radius: 12px;
+      padding: 13px 14px 14px;
+      min-width: 0;
+      background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+      box-shadow: 0 8px 22px rgba(24, 39, 75, 0.05);
+    }
+    .metric::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+    }
+    .metric.jobs-metric {
+      background: linear-gradient(180deg, #f5fffb 0%, #eafaf5 100%);
+      border-color: #bdebe0;
+    }
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .metric strong {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+    .metric.jobs-metric strong {
+      color: #078b76;
+      font-size: 22px;
+      line-height: 1;
+    }
+    .job {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow: var(--shadow-soft);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .job:hover {
+      border-color: #bdd7ff;
+      box-shadow: var(--shadow);
+    }
+    .job-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .job h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .job .company {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .score {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--brand-soft), var(--accent-soft));
+      color: #0d4fae;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .reason {
+      color: #303640;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 10px 0;
+    }
+    .apply {
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-flex;
+      margin-top: 2px;
+    }
+    .apply:hover { text-decoration: underline; }
+    .job-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 18px 0 4px;
+    }
+
+    .load-more {
+      min-width: 180px;
+      padding: 12px 22px;
+      border: 1px solid #b9d5ff;
+      border-radius: 8px;
+      background: #fff;
+      color: #0757b8;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .load-more:hover {
+      background: #eef6ff;
+    }
+    .save-job {
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: var(--brand-dark);
+      border: 1px solid #c8ddff;
+      box-shadow: none;
+      font-size: 13px;
+    }
+    .save-job:hover {
+      background: var(--brand-soft);
+    }
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 34px;
+      text-align: center;
+      color: var(--muted);
+      background:
+        linear-gradient(135deg, rgba(234, 243, 255, 0.7), rgba(232, 251, 246, 0.7)),
+        #fbfcfe;
+    }
+    .upload-box {
+      border: 1px solid #d6e4ff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 249, 255, 0.96) 100%),
+        var(--brand-soft);
+      position: relative;
+      overflow: hidden;
+    }
+    .upload-box::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--brand), var(--accent));
+    }
+    .secondary {
+      background: #eef4ff;
+      color: var(--brand-dark);
+      border: 1px solid #c8ddff;
+      box-shadow: none;
+    }
+    .secondary:hover {
+      background: #dfeeff;
+    }
+    .native-file-input {
+      display: none;
+    }
+    .file-control {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 9px;
+      background: #fff;
+      min-height: 54px;
+    }
+    .choose-file {
+      width: auto;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 9px;
+      border: 1px solid #aeb7c2;
+      background: #f8fafc;
+      color: var(--text);
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+    .choose-file:hover {
+      background: #eef2f6;
+    }
+    .file-name {
+      flex: 1 1 auto;
+      color: var(--muted);
+      font-size: 14px;
+      overflow-wrap: anywhere;
+      min-width: 0;
+    }
+    .file-label {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .remove-file {
+      width: 28px;
+      height: 28px;
+      margin: 0;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid #ffccc7;
+      background: #fff1f0;
+      color: var(--bad);
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 800;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+    .remove-file:hover {
+      background: #ffe4e0;
+    }
+    .file-control.has-file .remove-file {
+      display: inline-flex;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(23, 184, 144, 0.16), transparent 30%),
+        radial-gradient(circle at 88% 18%, rgba(23, 105, 224, 0.12), transparent 28%),
+        linear-gradient(135deg, #f7fbfa 0%, #edf7f4 46%, #f8fbff 100%);
+      z-index: 20;
+      overflow-y: auto;
+    }
+    .modal-backdrop.is-open {
+      display: flex;
+    }
+    .auth-modal {
+      width: min(460px, 100%);
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+      border: 1px solid rgba(218, 226, 232, 0.95);
+      border-radius: 18px;
+      padding: 34px 34px 28px;
+      box-shadow: 0 30px 90px rgba(15, 23, 42, 0.24);
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .modal-head h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .auth-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      color: #fff;
+      background: linear-gradient(135deg, #11b99a, #078f79);
+      box-shadow: 0 16px 30px rgba(17, 185, 154, 0.28);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+    .auth-brand-title {
+      font-size: 29px;
+      line-height: 1.05;
+      font-weight: 850;
+      letter-spacing: -0.025em;
+    }
+    .auth-brand-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    .close-modal {
+      width: 30px;
+      height: 30px;
+      margin: 0;
+      padding: 0;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #2f3742;
+      border: 1px solid var(--line);
+      box-shadow: none;
+      font-size: 17px;
+      line-height: 1;
+    }
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 4px;
+      background: #eef6f4;
+      border: 1px solid #d8ebe6;
+      border-radius: 999px;
+    }
+    .auth-tab {
+      margin: 0;
+      padding: 10px 12px;
+      background: transparent;
+      color: #60756f;
+      border: 0;
+      border-radius: 999px;
+      box-shadow: none;
+    }
+    .auth-tab.is-active {
+      background: #ffffff;
+      color: #067762;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    }
+    .auth-form {
+      display: none;
+    }
+    .auth-form.is-active {
+      display: block;
+    }
+    .auth-form label {
+      color: #34423f;
+      font-size: 13px;
+      margin-top: 18px;
+    }
+    .auth-form input {
+      border-radius: 0;
+      border-width: 0 0 1px;
+      border-color: #d8e2df;
+      padding: 13px 2px 12px;
+      background: transparent;
+      box-shadow: none;
+    }
+    .auth-form input:focus {
+      border-color: #0d9f86;
+      box-shadow: 0 8px 0 -7px rgba(13, 159, 134, 0.35);
+    }
+    .auth-form button[type="submit"] {
+      margin-top: 26px;
+      background: linear-gradient(135deg, #0aa98e, #078b76);
+      box-shadow: 0 14px 28px rgba(10, 169, 142, 0.24);
+      border-radius: 9px;
+    }
+    .auth-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .auth-link {
+      width: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #078b76;
+      box-shadow: none;
+      font-weight: 800;
+    }
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: min(420px, 100%);
+      height: 100vh;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border-left: 1px solid var(--line);
+      box-shadow: -18px 0 46px rgba(15, 23, 42, 0.16);
+      z-index: 18;
+      transition: right 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .side-panel.is-open {
+      right: 0;
+    }
+    .side-panel-head {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .side-panel-head h2 {
+      margin: 0;
+    }
+    .side-panel-content {
+      padding: 18px;
+      overflow: auto;
+    }
+    .panel-item {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #fbfcfe;
+    }
+    .panel-item h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+    .panel-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .panel-action {
+      width: auto;
+      margin: 8px 8px 0 0;
+      padding: 8px 11px;
+      border-radius: 999px;
+      box-shadow: none;
+      font-size: 12px;
+    }
+    .history-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .history-chip {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .history-chip strong {
+      display: block;
+      color: var(--text);
+      margin-top: 3px;
+      overflow-wrap: anywhere;
+    }
+    .history-job {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      margin-top: 12px;
+    }
+    .history-job-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .history-job-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .history-score {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    @media (max-width: 900px) {
+      header { align-items: flex-start; flex-direction: column; padding: 18px; }
+      .auth-bar { justify-content: flex-start; }
+      main { grid-template-columns: 1fr; padding: 16px; }
+      .summary, .row { grid-template-columns: 1fr; }
+      header h1 { font-size: 24px; }
+      section { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand-block">
+      <div class="brand-kicker">AI Recruitment Platform</div>
+      <h1>Career Recommendation Agent</h1>
+      <p class="header-subtitle">Analyze CVs, portfolios, and keywords to rank job opportunities with recruiter-style scoring.</p>
+    </div>
+    <div class="auth-bar">
+      <div id="account-menu" class="account-menu hidden">
+        <button id="account-menu-button" class="account-menu-button" type="button" aria-label="Open account menu" aria-expanded="false">
+          <span class="account-dots">⋮</span>
+        </button>
+        <div id="account-dropdown" class="account-dropdown hidden">
+          <span id="auth-status" class="account-summary"></span>
+          <button id="admin-button" class="account-menu-item hidden" type="button">Admin <span>›</span></button>
+          <button id="history-button" class="account-menu-item" type="button">History <span>›</span></button>
+          <button id="saved-jobs-button" class="account-menu-item" type="button">Saved Jobs <span>›</span></button>
+          <button id="logout-button" class="account-menu-item logout" type="button">Logout <span>›</span></button>
+        </div>
+      </div>
+      <button id="signin-button" class="auth-action secondary" type="button">Sign In</button>
+      <button id="signup-button" class="auth-action" type="button">Sign Up</button>
+    </div>
+  </header>
+  <main>
+    <section>
+      <h2>Profile</h2>
+      <div class="upload-box">
+        <h2>CV / Portfolio</h2>
+        <label for="cv_file">Upload CV</label>
+        <input id="cv_file" class="native-file-input" name="cv_file" type="file" accept=".txt,.pdf,.docx,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff">
+        <div id="file-control" class="file-control">
+          <button id="choose-file-button" class="choose-file" type="button">Choose file</button>
+          <span id="selected-file-label" class="file-name">No file chosen</span>
+          <button id="remove-cv-button" class="remove-file" type="button" aria-label="Remove CV and clear profile" title="Remove CV and clear profile">×</button>
+        </div>
+
+        <label for="portfolio_url">Portfolio / GitHub / Website Link</label>
+        <input id="portfolio_url" name="portfolio_url" type="url" placeholder="https://your-portfolio.com or https://github.com/username">
+
+        <label for="keyword_search">Keywords</label>
+        <input id="keyword_search" name="keyword_search" placeholder="Example: Python, Django, SQL, Remote" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <button id="autofill-button" class="secondary" type="button">Auto Fill Profile</button>
+        <div id="autofill-status" class="status"></div>
+        <div id="profile-review" class="profile-review hidden"></div>
+      </div>
+
+      <form id="recommendation-form">
+        <div class="form-section">
+          <div class="form-section-title">Role & Skills</div>
+          <div class="field-group">
+            <label for="desired_role">Desired Role</label>
+            <input id="desired_role" name="desired_role" placeholder="Example: Machine Learning Engineer" required>
+            <p class="field-hint">Used as the main job-search role.</p>
+          </div>
+          <div class="field-group">
+            <label for="skills">Skills</label>
+            <textarea id="skills" name="skills" placeholder="Example: Python, FastAPI, Machine Learning, SQL, Docker"></textarea>
+            <p class="field-hint">Comma-separated skills improve matching accuracy.</p>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Experience & Projects</div>
+          <div class="row">
+            <div class="field-group">
+              <label for="experience_years">Experience Years</label>
+              <input id="experience_years" name="experience_years" type="number" min="0" step="0.5" placeholder="Auto">
+            </div>
+            <div class="field-group">
+              <label for="seniority">Seniority</label>
+              <select id="seniority" name="seniority">
+                <option value="">Auto</option>
+                <option>Junior</option>
+                <option>Mid</option>
+                <option>Senior</option>
+                <option>Lead</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="experience">Experience</label>
+            <textarea id="experience" class="smart-field" name="experience" placeholder="Experience will be auto-filled from CV or portfolio."></textarea>
+          </div>
+          <div class="field-group">
+            <label for="projects">Projects / Portfolio</label>
+            <textarea id="projects" class="smart-field" name="projects" placeholder="Projects will be auto-filled from CV or portfolio."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Search Preferences</div>
+          <div class="field-group hidden-field">
+            <label for="location">Location</label>
+            <input id="location" name="location" type="hidden" value="">
+          </div>
+          <div class="field-group">
+            <label for="query">Search Query</label>
+            <input id="query" class="smart-field" name="query" placeholder="Auto-filled from desired role">
+            <p class="field-hint">Leave blank to auto-use the desired role.</p>
+          </div>
+          <input id="domain" name="domain" type="hidden" value="">
+          <input id="alternate_roles" name="alternate_roles" type="hidden" value="">
+          <input id="search_queries" name="search_queries" type="hidden" value="">
+          <input id="confidence" name="confidence" type="hidden" value="">
+          <div class="search-settings">
+            <div class="row">
+              <div class="field-group">
+                <label for="provider">Provider</label>
+                <select id="provider" name="provider">
+                  <option value="all" selected>All Providers</option>
+                  <option value="remotive">Remotive temporary</option>
+                  <option value="serpapi">SerpAPI</option>
+                  <option value="jsearch">JSearch API</option>
+                  <option value="jooble">Jooble API</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="source_filter">Source Filter</label>
+                <select id="source_filter" name="source_filter">
+                  <option value="">Any</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="indeed">Indeed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="submit-button" type="submit">Find Recommended Jobs -></button>
+        <div id="status" class="status"></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Recommendations</h2>
+      <div id="results" class="empty">Run a search to see matched jobs here.</div>
+    </section>
+  </main>
+
+  <aside id="side-panel" class="side-panel" aria-hidden="true">
+    <div class="side-panel-head">
+      <h2 id="side-panel-title">Dashboard</h2>
+      <button id="close-side-panel" class="close-modal" type="button" aria-label="Close panel">&times;</button>
+    </div>
+    <div id="side-panel-content" class="side-panel-content"></div>
+  </aside>
+
+  <div id="auth-modal" class="modal-backdrop" aria-hidden="true">
+    <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+      <div class="auth-brand">
+        <div class="auth-logo">CR</div>
+        <div>
+          <div class="auth-brand-title">Career Agent</div>
+          <div class="auth-brand-subtitle">AI-powered job matching platform</div>
+        </div>
+      </div>
+      <div class="modal-head">
+        <h2 id="auth-title">Sign in</h2>
+        <button id="close-auth-modal" class="close-modal" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="auth-tabs">
+        <button id="login-tab" class="auth-tab is-active" type="button">Sign In</button>
+        <button id="signup-tab" class="auth-tab" type="button">Sign Up</button>
+      </div>
+      <form id="login-form" class="auth-form is-active">
+        <label for="login-email">Username or Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="email" required>
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">Login</button>
+        <div class="auth-switch">
+          <span>New to Career Agent?</span>
+          <button class="auth-link" type="button" data-auth-switch="signup">Create account</button>
+        </div>
+      </form>
+      <form id="signup-form" class="auth-form">
+        <label for="signup-name">Full Name</label>
+        <input id="signup-name" name="full_name" autocomplete="name" required>
+        <label for="signup-email">Email</label>
+        <input id="signup-email" name="email" type="email" autocomplete="email" required>
+        <label for="signup-password">Password</label>
+        <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+        <button type="submit">Create Account</button>
+        <div class="auth-switch">
+          <span>Already have an account?</span>
+          <button class="auth-link" type="button" data-auth-switch="login">Sign in</button>
+        </div>
+      </form>
+      <div id="auth-message" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("recommendation-form");
+    const statusEl = document.getElementById("status");
+    const autofillStatusEl = document.getElementById("autofill-status");
+    const profileReviewEl = document.getElementById("profile-review");
+    const resultsEl = document.getElementById("results");
+    const button = document.getElementById("submit-button");
+    const autofillButton = document.getElementById("autofill-button");
+    const removeCvButton = document.getElementById("remove-cv-button");
+    const chooseFileButton = document.getElementById("choose-file-button");
+    const fileInput = document.getElementById("cv_file");
+    const fileControl = document.getElementById("file-control");
+    const selectedFileLabel = document.getElementById("selected-file-label");
+    const experienceYearsInput = document.getElementById("experience_years");
+    const senioritySelect = document.getElementById("seniority");
+    const authStatus = document.getElementById("auth-status");
+    const accountMenu = document.getElementById("account-menu");
+    const accountMenuButton = document.getElementById("account-menu-button");
+    const accountDropdown = document.getElementById("account-dropdown");
+    const adminButton = document.getElementById("admin-button");
+    const historyButton = document.getElementById("history-button");
+    const savedJobsButton = document.getElementById("saved-jobs-button");
+    const signinButton = document.getElementById("signin-button");
+    const signupButton = document.getElementById("signup-button");
+    const logoutButton = document.getElementById("logout-button");
+    const sidePanel = document.getElementById("side-panel");
+    const sidePanelTitle = document.getElementById("side-panel-title");
+    const sidePanelContent = document.getElementById("side-panel-content");
+    const closeSidePanel = document.getElementById("close-side-panel");
+    const authModal = document.getElementById("auth-modal");
+    const closeAuthModal = document.getElementById("close-auth-modal");
+    const loginTab = document.getElementById("login-tab");
+    const signupTab = document.getElementById("signup-tab");
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const authMessage = document.getElementById("auth-message");
+    let authToken = localStorage.getItem("career_agent_token") || "";
+    let authUser = parseStoredUser();
+    let renderedJobs = [];
+    let renderedSummary = null;
+    let visibleJobCount = 25;
+    const savedJobKeys = new Set();
+    const apiBase = window.location.protocol === "file:" ? "http://localhost" : window.location.origin;
+
+    updateAuthUi();
+    if (!authToken) {
+      openAuthModal("login");
+    }
+
+    signinButton.addEventListener("click", () => openAuthModal("login"));
+    signupButton.addEventListener("click", () => openAuthModal("signup"));
+    accountMenuButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleAccountDropdown();
+    });
+    document.addEventListener("click", (event) => {
+      if (!accountMenu.contains(event.target)) {
+        closeAccountDropdown();
+      }
+    });
+    authModal.addEventListener("click", (event) => {
+      const switchButton = event.target.closest("[data-auth-switch]");
+      if (switchButton) {
+        switchAuthMode(switchButton.dataset.authSwitch);
+      }
+    });
+    historyButton.addEventListener("click", () => {
+      closeAccountDropdown();
+      loadHistory();
+    });
+    adminButton.addEventListener("click", () => {
+      closeAccountDropdown();
+      loadAdminDashboard();
+    });
+    savedJobsButton.addEventListener("click", () => {
+      closeAccountDropdown();
+      loadSavedJobs();
+    });
+    closeSidePanel.addEventListener("click", closeDashboardPanel);
+    closeAuthModal.addEventListener("click", closeAuthDialog);
+    authModal.addEventListener("click", (event) => {
+      if (event.target === authModal) {
+        closeAuthDialog();
+      }
+    });
+    loginTab.addEventListener("click", () => switchAuthMode("login"));
+    signupTab.addEventListener("click", () => switchAuthMode("signup"));
+    logoutButton.addEventListener("click", () => {
+      closeAccountDropdown();
+      clearAuthState();
+      closeDashboardPanel();
+      openAuthModal("login");
+    });
+    loginForm.addEventListener("submit", (event) => submitAuth(event, "login"));
+    signupForm.addEventListener("submit", (event) => submitAuth(event, "signup"));
+
+    chooseFileButton.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener("change", () => {
+      updateSelectedFileName();
+    });
+
+    experienceYearsInput.addEventListener("input", () => {
+      updateSeniorityFromExperienceYears();
+    });
+
+    experienceYearsInput.addEventListener("change", () => {
+      updateSeniorityFromExperienceYears();
+    });
+
+    document.getElementById("keyword_search").addEventListener("input", () => {
+      profileReviewEl.classList.add("hidden");
+      profileReviewEl.innerHTML = "";
+      autofillStatusEl.textContent = "";
+      autofillStatusEl.className = "status";
+    });
+
+    removeCvButton.addEventListener("click", () => {
+      clearCvFile();
+      clearProfileFields();
+      autofillStatusEl.textContent = "CV removed and profile information cleared.";
+      autofillStatusEl.className = "status";
+    });
+
+    autofillButton.addEventListener("click", async () => {
+      const portfolioUrl = document.getElementById("portfolio_url").value;
+      const keywordSearch = document.getElementById("keyword_search").value;
+      if (!fileInput.files.length && !portfolioUrl.trim() && !keywordSearch.trim()) {
+        autofillStatusEl.textContent = "Upload a CV, enter a portfolio link, or add job keywords first.";
+        autofillStatusEl.className = "status error";
+        return;
+      }
+
+      if (!fileInput.files.length && !portfolioUrl.trim() && keywordSearch.trim()) {
+        autofillButton.disabled = true;
+        autofillStatusEl.textContent = "Analyzing keywords...";
+        autofillStatusEl.className = "status";
+        const keywordUpload = new FormData();
+        keywordUpload.append("portfolio_text", keywordSearch);
+        keywordUpload.append("input_type", "keywords");
+        try {
+          const response = await fetch(apiUrl("/api/extract-profile"), {
+            method: "POST",
+            body: keywordUpload
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(apiErrorMessage(payload, "Keyword analysis failed"));
+          }
+          applyKeywordFields(keywordSearch, payload.fields);
+          autofillStatusEl.textContent = "Profile form filled from keywords.";
+          autofillStatusEl.className = "status";
+        } catch (error) {
+          autofillStatusEl.textContent = networkErrorMessage(error);
+          autofillStatusEl.className = "status error";
+        } finally {
+          autofillButton.disabled = false;
+        }
+        return;
+      }
+
+      autofillButton.disabled = true;
+      autofillStatusEl.textContent = "Extracting profile fields...";
+      autofillStatusEl.className = "status";
+
+      const upload = new FormData();
+      if (fileInput.files.length) {
+        upload.append("cv_file", fileInput.files[0]);
+      }
+      upload.append("portfolio_url", portfolioUrl);
+
+      try {
+        const response = await fetch(apiUrl("/api/extract-profile"), {
+          method: "POST",
+          body: upload
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(payload, "Profile extraction failed"));
+        }
+        applyExtractedFields(payload.fields);
+        autofillStatusEl.textContent = "Profile form filled from CV/portfolio.";
+      } catch (error) {
+        autofillStatusEl.textContent = networkErrorMessage(error);
+        autofillStatusEl.className = "status error";
+      } finally {
+        autofillButton.disabled = false;
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      statusEl.textContent = "Fetching live jobs and ranking matches...";
+      statusEl.className = "status";
+
+      const data = Object.fromEntries(new FormData(form).entries());
+      try {
+        const response = await fetch(apiUrl("/api/recommend"), {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(data)
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(payload, "Request failed"));
+        }
+        renderResults(payload);
+        statusEl.textContent = "Recommendations ready.";
+      } catch (error) {
+        resultsEl.className = "empty";
+        resultsEl.textContent = "No results to show.";
+        statusEl.textContent = networkErrorMessage(error);
+        statusEl.className = "status error";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    function parseStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem("career_agent_user") || "null");
+      } catch {
+        return null;
+      }
+    }
+
+    function updateAuthUi() {
+      if (authToken && authUser) {
+        authStatus.textContent = `Signed in as ${authUser.full_name || authUser.email}`;
+        accountMenu.classList.remove("hidden");
+        adminButton.classList.toggle("hidden", !authUser.is_admin);
+        signinButton.classList.add("hidden");
+        signupButton.classList.add("hidden");
+      } else {
+        authStatus.textContent = "";
+        accountMenu.classList.add("hidden");
+        adminButton.classList.add("hidden");
+        closeAccountDropdown();
+        signinButton.classList.remove("hidden");
+        signupButton.classList.remove("hidden");
+      }
+    }
+
+    function toggleAccountDropdown() {
+      const isOpen = !accountDropdown.classList.contains("hidden");
+      accountDropdown.classList.toggle("hidden", isOpen);
+      accountMenuButton.setAttribute("aria-expanded", String(!isOpen));
+    }
+
+    function closeAccountDropdown() {
+      accountDropdown.classList.add("hidden");
+      accountMenuButton.setAttribute("aria-expanded", "false");
+    }
+
+    function openAuthModal(mode) {
+      switchAuthMode(mode);
+      authMessage.textContent = "";
+      authMessage.className = "status";
+      authModal.classList.add("is-open");
+      authModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-locked");
+      const firstInput = mode === "signup"
+        ? document.getElementById("signup-name")
+        : document.getElementById("login-email");
+      firstInput.focus();
+    }
+
+    function closeAuthDialog() {
+      authModal.classList.remove("is-open");
+      authModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-locked");
+    }
+
+    function switchAuthMode(mode) {
+      const isSignup = mode === "signup";
+      document.getElementById("auth-title").textContent = isSignup ? "Create account" : "Sign in";
+      loginTab.classList.toggle("is-active", !isSignup);
+      signupTab.classList.toggle("is-active", isSignup);
+      loginForm.classList.toggle("is-active", !isSignup);
+      signupForm.classList.toggle("is-active", isSignup);
+      authMessage.textContent = "";
+      authMessage.className = "status";
+    }
+
+    async function submitAuth(event, mode) {
+      event.preventDefault();
+      authMessage.textContent = mode === "signup" ? "Creating account..." : "Signing in...";
+      authMessage.className = "status";
+      const activeForm = mode === "signup" ? signupForm : loginForm;
+      const submitButton = activeForm.querySelector("button[type='submit']");
+      submitButton.disabled = true;
+      const data = Object.fromEntries(new FormData(activeForm).entries());
+      try {
+        const response = await fetch(apiUrl(`/api/auth/${mode}`), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(apiErrorMessage(payload, "Authentication failed"));
+        }
+        authToken = payload.access_token;
+        authUser = payload.user;
+        localStorage.setItem("career_agent_token", authToken);
+        localStorage.setItem("career_agent_user", JSON.stringify(authUser));
+        updateAuthUi();
+        closeAuthDialog();
+      } catch (error) {
+        authMessage.textContent = networkErrorMessage(error);
+        authMessage.className = "status error";
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    function authHeaders(headers = {}) {
+      if (authToken) {
+        return { ...headers, Authorization: `Bearer ${authToken}` };
+      }
+      return headers;
+    }
+
+    function apiUrl(path) {
+      return `${apiBase}${path}`;
+    }
+
+    function apiErrorMessage(payload, fallback) {
+      const detail = payload?.detail || payload?.error;
+      if (!detail) {
+        return fallback;
+      }
+      if (typeof detail === "string") {
+        return detail;
+      }
+      if (Array.isArray(detail)) {
+        return detail
+          .map((item) => item?.msg || item?.message || JSON.stringify(item))
+          .join(", ");
+      }
+      if (typeof detail === "object") {
+        return detail.msg || detail.message || JSON.stringify(detail);
+      }
+      return String(detail);
+    }
+
+    function networkErrorMessage(error) {
+      if (error instanceof TypeError && error.message.toLowerCase().includes("fetch")) {
+        return `Backend connection failed. Open ${apiBase} and make sure the server is running.`;
+      }
+      return error.message;
+    }
+
+    function renderResults(payload) {
+      const summary = payload.user_profile_summary;
+      const jobs = payload.recommended_jobs || [];
+      renderedJobs = jobs;
+      renderedSummary = summary;
+      visibleJobCount = Math.min(25, jobs.length);
+      renderVisibleResults();
+    }
+
+    function renderVisibleResults() {
+      const summary = renderedSummary;
+      const jobs = renderedJobs;
+      if (!summary) {
+        return;
+      }
+      const summaryHtml = `
+        <div class="summary">
+          <div class="metric"><span>Target Role</span><strong>${escapeHtml(summary.target_role)}</strong></div>
+          <div class="metric"><span>Experience</span><strong>${escapeHtml(summary.experience_level)}</strong></div>
+          <div class="metric"><span>Domain</span><strong>${escapeHtml(summary.domain)}</strong></div>
+          <div class="metric jobs-metric"><span>Jobs</span><strong>${jobs.length}</strong></div>
+        </div>
+      `;
+      if (!jobs.length) {
+        resultsEl.className = "";
+        resultsEl.innerHTML = summaryHtml + `<div class="empty">No jobs crossed the relevance threshold. Try a broader query.</div>`;
+        return;
+      }
+      const jobsHtml = jobs.slice(0, visibleJobCount).map((job, index) => {
+        const isSaved = savedJobKeys.has(jobKey(job));
+        return `
+        <article class="job">
+          <div class="job-head">
+            <div>
+              <h3>${escapeHtml(job.job_title)}</h3>
+              <div class="company">${escapeHtml(job.company)} · ${escapeHtml(job.source)}</div>
+            </div>
+            <div class="score">${job.match_score}%</div>
+          </div>
+          <p class="reason">${escapeHtml(job.reason)}</p>
+          <div class="job-actions">
+            ${job.apply_link ? `<a class="apply" href="${escapeAttribute(job.apply_link)}" target="_blank" rel="noreferrer">Apply</a>` : ""}
+            <button class="save-job${isSaved ? " is-saved" : ""}" type="button" data-save-job-index="${index}"${isSaved ? " disabled" : ""}>${isSaved ? "Saved" : "Save Job"}</button>
+          </div>
+        </article>
+      `;
+      }).join("");
+      const loadMoreHtml = visibleJobCount < jobs.length
+        ? `<div class="load-more-wrap"><button class="load-more" type="button" data-load-more>Load More</button></div>`
+        : "";
+      resultsEl.className = "";
+      resultsEl.innerHTML = summaryHtml + jobsHtml + loadMoreHtml;
+    }
+
+    function jobKey(job) {
+      return [
+        job.job_title || "",
+        job.company || "",
+        job.apply_link || "",
+        job.source || ""
+      ].map((value) => String(value).trim().toLowerCase()).join("|");
+    }
+
+    function setSaveButtonState(button, isSaved) {
+      button.disabled = isSaved;
+      button.textContent = isSaved ? "Saved" : "Save Job";
+      button.classList.toggle("is-saved", isSaved);
+    }
+
+    function syncRenderedSaveButtons() {
+      resultsEl.querySelectorAll("[data-save-job-index]").forEach((button) => {
+        const job = renderedJobs[Number(button.dataset.saveJobIndex)] || {};
+        setSaveButtonState(button, savedJobKeys.has(jobKey(job)));
+      });
+    }
+
+    resultsEl.addEventListener("click", async (event) => {
+      const loadMoreButton = event.target.closest("[data-load-more]");
+      if (loadMoreButton) {
+        visibleJobCount = Math.min(visibleJobCount + 25, renderedJobs.length);
+        renderVisibleResults();
+        return;
+      }
+      const saveButton = event.target.closest("[data-save-job-index]");
+      if (!saveButton) {
+        return;
+      }
+      if (!authToken) {
+        openAuthModal("login");
+        authMessage.textContent = "Please sign in before saving jobs.";
+        authMessage.className = "status error";
+        return;
+      }
+      const jobIndex = Number(saveButton.dataset.saveJobIndex);
+      const job = renderedJobs[jobIndex] || {};
+      saveButton.disabled = true;
+      saveButton.textContent = "Saving...";
+      try {
+        const response = await fetch(apiUrl("/api/saved-jobs"), {
+          method: "POST",
+          headers: authHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify(job)
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 401) {
+            handleAuthExpired("Please sign in again before saving jobs.");
+            return;
+          }
+          throw new Error(apiErrorMessage(payload, "Could not save job"));
+        }
+        savedJobKeys.add(jobKey(job));
+        setSaveButtonState(saveButton, true);
+        statusEl.textContent = "";
+        statusEl.className = "status";
+        if (sidePanel.classList.contains("is-open") && sidePanelTitle.textContent === "Saved Jobs") {
+          await loadSavedJobs();
+        }
+      } catch (error) {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save Job";
+        statusEl.textContent = networkErrorMessage(error);
+        statusEl.className = "status error";
+      }
+    });
+
+    async function loadHistory() {
+      if (!authToken) {
+        openAuthModal("login");
+        return;
+      }
+      openDashboardPanel("Recommendation History", `<div class="empty">Loading history...</div>`);
+      try {
+        const response = await fetch(apiUrl("/api/recommendations/history"), {
+          headers: authHeaders()
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 401) {
+            handleAuthExpired("Please sign in again to view history.");
+            return;
+          }
+          throw new Error(apiErrorMessage(payload, "Could not load history"));
+        }
+        const history = payload.history || [];
+        if (!history.length) {
+          sidePanelContent.innerHTML = `<div class="empty">No recommendation history yet.</div>`;
+          return;
+        }
+        sidePanelContent.innerHTML = history.map((item) => {
+          const output = item.output_payload || {};
+          const summary = output.user_profile_summary || {};
+          const jobs = output.recommended_jobs || [];
+          const jobsHtml = jobs.length ? jobs.map((job) => `
+            <div class="history-job">
+              <div class="history-job-head">
+                <div>
+                  <div class="history-job-title">${escapeHtml(job.job_title)}</div>
+                  <div class="panel-meta">${escapeHtml(job.company)} - ${escapeHtml(job.source || "")}</div>
+                </div>
+                <span class="history-score">${escapeHtml(job.match_score)}%</span>
+              </div>
+              <p class="reason">${escapeHtml(job.reason || "")}</p>
+              ${job.apply_link ? `<a class="apply" href="${escapeAttribute(job.apply_link)}" target="_blank" rel="noreferrer">Apply</a>` : ""}
+            </div>
+          `).join("") : `<div class="empty">No matched jobs in this run.</div>`;
+          return `
+            <article class="panel-item">
+              <h3>${escapeHtml(item.target_role || output.user_profile_summary?.target_role || "Recommendation")}</h3>
+              <div class="panel-meta">${escapeHtml(item.provider || "")} · ${escapeHtml(item.created_at || "")}</div>
+              <div class="history-summary">
+                <div class="history-chip">Target Role<strong>${escapeHtml(summary.target_role || item.target_role || "")}</strong></div>
+                <div class="history-chip">Experience<strong>${escapeHtml(summary.experience_level || "")}</strong></div>
+                <div class="history-chip">Domain<strong>${escapeHtml(summary.domain || "")}</strong></div>
+                <div class="history-chip">Jobs<strong>${jobs.length}</strong></div>
+              </div>
+              ${jobsHtml}
+              <button class="panel-action" type="button" data-view-history='${escapeAttribute(JSON.stringify(output))}'>Open In Results</button>
+            </article>
+          `;
+        }).join("");
+      } catch (error) {
+        sidePanelContent.innerHTML = `<div class="empty error">${escapeHtml(networkErrorMessage(error))}</div>`;
+      }
+    }
+
+    async function loadSavedJobs() {
+      if (!authToken) {
+        openAuthModal("login");
+        return;
+      }
+      openDashboardPanel("Saved Jobs", `<div class="empty">Loading saved jobs...</div>`);
+      try {
+        const response = await fetch(apiUrl("/api/saved-jobs"), {
+          headers: authHeaders()
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 401) {
+            handleAuthExpired("Please sign in again to view saved jobs.");
+            return;
+          }
+          throw new Error(apiErrorMessage(payload, "Could not load saved jobs"));
+        }
+        const savedJobs = payload.saved_jobs || [];
+        savedJobKeys.clear();
+        savedJobs.forEach((job) => savedJobKeys.add(jobKey(job)));
+        syncRenderedSaveButtons();
+        if (!savedJobs.length) {
+          sidePanelContent.innerHTML = `<div class="empty">No saved jobs yet.</div>`;
+          return;
+        }
+        sidePanelContent.innerHTML = savedJobs.map((job) => `
+          <article class="panel-item">
+            <h3>${escapeHtml(job.job_title)}</h3>
+            <div class="panel-meta">${escapeHtml(job.company)} · ${escapeHtml(job.source || "")}</div>
+            <p class="reason">${escapeHtml(job.reason || "")}</p>
+            ${job.apply_link ? `<a class="apply" href="${escapeAttribute(job.apply_link)}" target="_blank" rel="noreferrer">Apply</a>` : ""}
+            <button class="panel-action secondary" type="button" data-delete-saved-job="${escapeAttribute(job.saved_job_id)}" data-saved-job-key="${escapeAttribute(jobKey(job))}">Remove</button>
+          </article>
+        `).join("");
+      } catch (error) {
+        sidePanelContent.innerHTML = `<div class="empty error">${escapeHtml(networkErrorMessage(error))}</div>`;
+      }
+    }
+
+    async function loadAdminDashboard() {
+      if (!authToken) {
+        openAuthModal("login");
+        return;
+      }
+      openDashboardPanel("Admin Dashboard", `<div class="empty">Loading admin system health...</div>`);
+      try {
+        const [statsResponse, systemResponse] = await Promise.all([
+          fetch(apiUrl("/api/admin/stats"), { headers: authHeaders() }),
+          fetch(apiUrl("/api/admin/system"), { headers: authHeaders() })
+        ]);
+        const statsPayload = await statsResponse.json();
+        const systemPayload = await systemResponse.json();
+        if (!statsResponse.ok) {
+          throw new Error(apiErrorMessage(statsPayload, "Could not load admin stats"));
+        }
+        if (!systemResponse.ok) {
+          throw new Error(apiErrorMessage(systemPayload, "Could not load system health"));
+        }
+        const stats = statsPayload.stats || {};
+        const system = systemPayload.system || {};
+        const providers = system.providers || {};
+        sidePanelContent.innerHTML = `
+          <div class="history-summary">
+            <div class="history-chip">Users<strong>${escapeHtml(stats.users || 0)}</strong></div>
+            <div class="history-chip">Searches<strong>${escapeHtml(stats.recommendation_runs || 0)}</strong></div>
+            <div class="history-chip">Saved Jobs<strong>${escapeHtml(stats.saved_jobs || 0)}</strong></div>
+            <div class="history-chip">Database<strong>${escapeHtml(system.database || "")}</strong></div>
+          </div>
+          <article class="panel-item">
+            <h3>Production Controls</h3>
+            <div class="panel-meta">Runtime and safety configuration</div>
+            <p class="reason">
+              Uptime: ${escapeHtml(system.uptime_seconds || 0)} seconds<br>
+              Max upload: ${escapeHtml(system.max_upload_mb || "")} MB<br>
+              Rate limit: ${escapeHtml(system.rate_limit_requests || "")} requests / ${escapeHtml(system.rate_limit_window_seconds || "")} seconds
+            </p>
+          </article>
+          <article class="panel-item">
+            <h3>Provider Status</h3>
+            <p class="reason">
+              Remotive: ${providerStatusText(providers.remotive)}<br>
+              SerpAPI: ${providerStatusText(providers.serpapi)}<br>
+              JSearch: ${providerStatusText(providers.jsearch)}<br>
+              Jooble: ${providerStatusText(providers.jooble)}<br>
+              Llama: ${providerStatusText(providers.llama)}
+            </p>
+          </article>
+        `;
+      } catch (error) {
+        sidePanelContent.innerHTML = `<div class="empty error">${escapeHtml(networkErrorMessage(error))}</div>`;
+      }
+    }
+
+    function providerStatusText(value) {
+      return value ? "Configured" : "Not configured";
+    }
+
+    sidePanelContent.addEventListener("click", async (event) => {
+      const historyButton = event.target.closest("[data-view-history]");
+      if (historyButton) {
+        renderResults(JSON.parse(historyButton.dataset.viewHistory || "{}"));
+        closeDashboardPanel();
+        return;
+      }
+      const deleteButton = event.target.closest("[data-delete-saved-job]");
+      if (!deleteButton) {
+        return;
+      }
+      deleteButton.disabled = true;
+      try {
+        const response = await fetch(apiUrl(`/api/saved-jobs/${deleteButton.dataset.deleteSavedJob}`), {
+          method: "DELETE",
+          headers: authHeaders()
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          if (response.status === 401) {
+            handleAuthExpired("Please sign in again to remove saved jobs.");
+            return;
+          }
+          throw new Error(apiErrorMessage(payload, "Could not remove saved job"));
+        }
+        savedJobKeys.delete(deleteButton.dataset.savedJobKey || "");
+        syncRenderedSaveButtons();
+        await loadSavedJobs();
+      } catch (error) {
+        deleteButton.disabled = false;
+        sidePanelContent.insertAdjacentHTML("afterbegin", `<div class="status error">${escapeHtml(networkErrorMessage(error))}</div>`);
+      }
+    });
+
+    function openDashboardPanel(title, html) {
+      sidePanelTitle.textContent = title;
+      sidePanelContent.innerHTML = html;
+      sidePanel.classList.add("is-open");
+      sidePanel.setAttribute("aria-hidden", "false");
+    }
+
+    function closeDashboardPanel() {
+      sidePanel.classList.remove("is-open");
+      sidePanel.setAttribute("aria-hidden", "true");
+    }
+
+    function clearAuthState() {
+      authToken = "";
+      authUser = null;
+      localStorage.removeItem("career_agent_token");
+      localStorage.removeItem("career_agent_user");
+      updateAuthUi();
+    }
+
+    function handleAuthExpired(message) {
+      clearAuthState();
+      closeDashboardPanel();
+      openAuthModal("login");
+      authMessage.textContent = message;
+      authMessage.className = "status error";
+    }
+
+    function applyExtractedFields(fields) {
+      setValue("desired_role", fields.desired_role);
+      setValue("skills", fields.skills);
+      setValue("experience", fields.experience);
+      setValue("education", fields.education);
+      setValue("projects", fields.projects);
+      setValue("domain", fields.domain);
+      setValue("alternate_roles", fields.alternate_roles);
+      setValue("search_queries", fields.search_queries);
+      setValue("confidence", fields.confidence);
+      setValue("query", fields.query || firstLine(fields.search_queries) || fields.desired_role);
+      renderProfileReview(fields.desired_role, fields.domain, fields.confidence);
+    }
+
+    function firstLine(value) {
+      return String(value || "").split(/\r?\n/).map((item) => item.trim()).find(Boolean) || "";
+    }
+
+    function applyKeywordFields(rawKeywords, detectedFields = {}) {
+      const keywords = rawKeywords
+        .split(/[,\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (!keywords.length) {
+        return;
+      }
+      resetDerivedProfileFields();
+      const role = String(detectedFields.desired_role || "").trim() || inferRoleFromKeywords(keywords);
+      const domain = String(detectedFields.domain || "").trim() || inferDomainFromKeywords(keywords);
+      replaceValue("skills", keywords.join(", "));
+      replaceValue("desired_role", role);
+      replaceValue("domain", domain);
+      replaceValue("confidence", "0.75");
+      const keywordQueries = buildSearchQueriesFromKeywords(keywords);
+      replaceValue("search_queries", keywordQueries.join("\n"));
+      replaceValue("alternate_roles", keywordQueries.join("\n"));
+      replaceValue("query", role || keywordQueries[0] || buildQueryFromKeywords(keywords));
+      renderProfileReview(role, domain, "0.75");
+    }
+
+    function resetDerivedProfileFields() {
+      [
+        "desired_role",
+        "skills",
+        "experience_years",
+        "experience",
+        "education",
+        "projects",
+        "domain",
+        "alternate_roles",
+        "search_queries",
+        "confidence",
+        "query"
+      ].forEach((id) => replaceValue(id, ""));
+      document.getElementById("seniority").value = "";
+    }
+
+    function renderProfileReview(role, domain, confidence) {
+      const cleanRole = String(role || "").trim();
+      const cleanDomain = String(domain || "").trim();
+      if (!cleanRole && !cleanDomain) {
+        profileReviewEl.classList.add("hidden");
+        profileReviewEl.innerHTML = "";
+        return;
+      }
+      const confidenceText = confidence ? ` · Confidence ${Math.round(Number(confidence) * 100) || confidence}%` : "";
+      profileReviewEl.innerHTML = `
+        <strong>Review detected profile</strong>
+        Role: ${escapeHtml(cleanRole || "Not detected")}<br>
+        Domain: ${escapeHtml(cleanDomain || "Not detected")}<br>
+        <span>Edit role or skills before search if this looks wrong${escapeHtml(confidenceText)}.</span>
+      `;
+      profileReviewEl.classList.remove("hidden");
+    }
+
+    function buildQueryFromKeywords(keywords) {
+      return keywords
+        .filter((item) => item.toLowerCase() !== "remote")
+        .slice(0, 4)
+        .join(" ");
+    }
+
+    function buildSearchQueriesFromKeywords(keywords) {
+      const role = inferRoleFromKeywords(keywords);
+      const domain = inferDomainFromKeywords(keywords);
+      const related = {
+        "AI / Machine Learning": ["AI Engineer", "Machine Learning Engineer", "ML Engineer", "Data Scientist"],
+        "Data / Analytics": ["Data Analyst", "Business Intelligence Analyst", "Data Engineer", "Analytics Specialist"],
+        "Backend Engineering": ["Backend Developer", "Backend Engineer", "API Developer", "Python Developer"],
+        "Frontend Engineering": ["Frontend Developer", "React Developer", "UI Developer", "Web Developer"],
+        "DevOps / Cloud": ["DevOps Engineer", "Cloud Engineer", "Platform Engineer", "Site Reliability Engineer"],
+        "Cybersecurity": ["Cybersecurity Analyst", "SOC Analyst", "Security Engineer", "Penetration Tester"],
+        "Creative Media / Video Production": ["Video Editor", "3D Modeler", "Motion Graphics Designer", "Video Production Specialist"],
+        "Healthcare": ["Nurse", "Medical Assistant", "Healthcare Assistant", "Pharmacist"],
+        "Education / Training": ["Teacher", "Tutor", "Education Coordinator", "Trainer"],
+        "Finance / Accounting": ["Accountant", "Finance Analyst", "Bookkeeper", "Accounts Assistant"],
+        "Marketing / Growth": ["Digital Marketing Specialist", "SEO Specialist", "Marketing Specialist", "Content Marketing Specialist"],
+        "Sales / Business Development": ["Sales Executive", "Business Development Executive", "Account Executive", "Sales Representative"],
+        "HR / Recruitment": ["HR Officer", "Recruiter", "Talent Acquisition Specialist", "HR Assistant"],
+        "Logistics / Supply Chain": ["Logistics Coordinator", "Supply Chain Specialist", "Warehouse Supervisor", "Procurement Officer"],
+        "Legal": ["Legal Assistant", "Paralegal", "Legal Officer", "Compliance Officer"],
+        "Engineering / Construction": ["Civil Engineer", "Mechanical Engineer", "Electrical Engineer", "Site Engineer"],
+        "Customer Support / Operations": ["Customer Support Representative", "Operations Assistant", "Administrative Assistant"],
+        "Hospitality": ["Hotel Manager", "Restaurant Manager", "Chef", "Hospitality Supervisor"]
+      };
+      return [role, ...(related[domain] || []), buildQueryFromKeywords(keywords)]
+        .map((item) => String(item || "").trim())
+        .filter((item, index, all) => item && all.indexOf(item) === index);
+    }
+
+    function inferRoleFromKeywords(keywords) {
+      const lower = keywords.map((item) => item.toLowerCase());
+      if (lower.some((item) => item.includes("premiere") || item.includes("after effects") || item.includes("video edit"))) {
+        if (lower.some((item) => item.includes("blender") || item.includes("3d"))) {
+          return "Video Editor & 3D Modeler";
+        }
+        return "Video Editor";
+      }
+      if (lower.some((item) => item.includes("blender") || item.includes("3d model") || item.includes("unreal"))) {
+        return "3D Modeler";
+      }
+      if (lower.some((item) => item.includes("django") || item.includes("flask") || item.includes("backend"))) {
+        return "Backend Developer";
+      }
+      if (lower.some((item) => item.includes("react") || item.includes("frontend") || item.includes("javascript"))) {
+        return "Frontend Developer";
+      }
+      if (lower.some((item) => item.includes("seo") || item.includes("marketing"))) {
+        return "Digital Marketing Specialist";
+      }
+      if (lower.some((item) => item.includes("sales"))) {
+        return "Sales Executive";
+      }
+      if (lower.some((item) => item.includes("accounting") || item.includes("finance"))) {
+        return "Finance Analyst";
+      }
+      if (lower.some((item) => item.includes("nursing") || item.includes("patient care") || item.includes("medical"))) {
+        return "Nurse";
+      }
+      if (lower.some((item) => item.includes("pharmacy") || item.includes("pharmacist"))) {
+        return "Pharmacist";
+      }
+      if (lower.some((item) => item.includes("teaching") || item.includes("teacher") || item.includes("tutor"))) {
+        return "Teacher";
+      }
+      if (lower.some((item) => item.includes("recruitment") || item === "hr" || item.includes("human resources"))) {
+        return "HR Officer";
+      }
+      if (lower.some((item) => item.includes("customer service") || item.includes("customer support"))) {
+        return "Customer Support Representative";
+      }
+      if (lower.some((item) => item.includes("logistics") || item.includes("supply chain"))) {
+        return "Logistics Coordinator";
+      }
+      if (lower.some((item) => item.includes("legal") || item.includes("paralegal"))) {
+        return "Legal Assistant";
+      }
+      if (lower.some((item) => item.includes("civil engineering"))) {
+        return "Civil Engineer";
+      }
+      if (lower.some((item) => item.includes("mechanical engineering"))) {
+        return "Mechanical Engineer";
+      }
+      if (lower.some((item) => item.includes("electrical engineering"))) {
+        return "Electrical Engineer";
+      }
+      if (lower.some((item) => item.includes("cyber security") || item.includes("cybersecurity") || item.includes("soc") || item.includes("siem") || item.includes("penetration"))) {
+        return "Cybersecurity Analyst";
+      }
+      if (lower.some((item) => item.includes("machine learning") || item === "ai" || item.includes("tensorflow") || item.includes("pytorch"))) {
+        return "AI Engineer";
+      }
+      return keywords[0] + " Professional";
+    }
+
+    function inferDomainFromKeywords(keywords) {
+      const lower = keywords.map((item) => item.toLowerCase()).join(" ");
+      if (/(premiere|after effects|video|blender|3d|3dmotion|motion graphics|unreal|photoshop|illustrator|animation|animator|editing)/.test(lower)) return "Creative Media / Video Production";
+      if (/(cyber security|cybersecurity|security analyst|soc|siem|penetration testing|vulnerability|network security)/.test(lower)) return "Cybersecurity";
+      if (/(machine learning|deep learning|tensorflow|pytorch|artificial intelligence|computer vision|nlp|llm|\bai\b|\bml\b)/.test(lower)) return "AI / Machine Learning";
+      if (/(data analyst|data analytics|business intelligence|\bbi\b|etl|data warehouse|reporting|tableau|power bi)/.test(lower)) return "Data / Analytics";
+      if (/(backend|fastapi|django|flask|microservices|api development|spring boot)/.test(lower)) return "Backend Engineering";
+      if (/(frontend|react|vue|angular|typescript|javascript|ui development)/.test(lower)) return "Frontend Engineering";
+      if (/(devops|cloud|aws|azure|gcp|docker|kubernetes|terraform|ci\/cd|site reliability)/.test(lower)) return "DevOps / Cloud";
+      if (/(nursing|patient care|medical|pharmacy|healthcare)/.test(lower)) return "Healthcare";
+      if (/(teaching|teacher|tutor|education|training)/.test(lower)) return "Education / Training";
+      if (/(accounting|finance|bookkeeping|quickbooks|payroll)/.test(lower)) return "Finance / Accounting";
+      if (/(marketing|seo|social media|google analytics)/.test(lower)) return "Marketing / Growth";
+      if (/(sales|business development|crm|negotiation)/.test(lower)) return "Sales / Business Development";
+      if (/(hr|recruitment|human resources|talent)/.test(lower)) return "HR / Recruitment";
+      if (/(logistics|supply chain|warehouse|procurement)/.test(lower)) return "Logistics / Supply Chain";
+      if (/(legal|paralegal|lawyer|compliance)/.test(lower)) return "Legal";
+      if (/(civil engineering|mechanical engineering|electrical engineering|construction|autocad)/.test(lower)) return "Engineering / Construction";
+      if (/(customer service|customer support|operations|administration|data entry)/.test(lower)) return "Customer Support / Operations";
+      if (/(hotel|restaurant|chef|hospitality)/.test(lower)) return "Hospitality";
+      return "General Technology";
+    }
+
+    function setValue(id, value) {
+      if (value === undefined || value === null || String(value).trim() === "") {
+        return;
+      }
+      const element = document.getElementById(id);
+      if (element) {
+        element.value = value;
+      }
+    }
+
+    function replaceValue(id, value) {
+      const element = document.getElementById(id);
+      if (element) {
+        element.value = value === undefined || value === null ? "" : String(value);
+      }
+    }
+
+    function clearCvFile() {
+      fileInput.value = "";
+      updateSelectedFileName();
+    }
+
+    function updateSelectedFileName() {
+      if (fileInput.files.length) {
+        selectedFileLabel.textContent = fileInput.files[0].name;
+        fileControl.className = "file-control has-file";
+      } else {
+        selectedFileLabel.textContent = "No file chosen";
+        fileControl.className = "file-control";
+      }
+    }
+
+    function clearProfileFields() {
+      [
+        "desired_role",
+        "skills",
+        "experience_years",
+        "experience",
+        "education",
+        "projects",
+        "keyword_search",
+        "location",
+        "domain",
+        "alternate_roles",
+        "search_queries",
+        "confidence",
+        "query",
+      ].forEach((id) => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.value = "";
+        }
+      });
+      document.getElementById("seniority").value = "";
+      document.getElementById("provider").value = "all";
+      document.getElementById("source_filter").value = "";
+      resultsEl.className = "empty";
+      resultsEl.textContent = "Run a search to see matched jobs here.";
+      statusEl.textContent = "";
+      renderProfileReview("", "", "");
+    }
+
+    function updateSeniorityFromExperienceYears() {
+      const rawValue = experienceYearsInput.value;
+      if (rawValue === "") {
+        senioritySelect.value = "";
+        return;
+      }
+      const years = Number(rawValue);
+      if (Number.isNaN(years)) {
+        senioritySelect.value = "";
+        return;
+      }
+      if (years < 3) {
+        senioritySelect.value = "Junior";
+      } else if (years < 6) {
+        senioritySelect.value = "Mid";
+      } else {
+        senioritySelect.value = "Senior";
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[char]);
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/`/g, "&#096;");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+Metadata-Version: 2.4
+Name: career-recommendation-agent
+Version: 0.1.0
+Summary: Offline AI-style career recommendation engine for matching profiles to provided job listings.
+Author: AI Career Recommendation Agent
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi<1.0,>=0.115.0
+Requires-Dist: langgraph<1.0,>=0.2.0
+Requires-Dist: langchain-groq<1.0,>=0.2.0
+Requires-Dist: pydantic<3.0,>=2.7
+Requires-Dist: pypdf<7.0,>=5.0.0
+Requires-Dist: pymupdf<2.0,>=1.24.0
+Requires-Dist: pytesseract<1.0,>=0.3.10
+Requires-Dist: psycopg[binary]<4.0,>=3.2.0
+Requires-Dist: python-dotenv<2.0,>=1.0.0
+Requires-Dist: python-multipart<1.0,>=0.0.9
+Requires-Dist: uvicorn[standard]<1.0,>=0.30.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.5.0; extra == "dev"
+
+# AI Career Recommendation Agent
+
+A professional LangGraph-based career recommendation agent that analyzes a user profile, fetches or accepts job listings, and ranks the most relevant opportunities.
+
+The project supports two modes:
+
+- Provided jobs mode: rank only the jobs supplied in the input JSON.
+- Live jobs mode: fetch jobs from a configured legal job-search API provider, then rank them.
+
+The scoring model is:
+
+- Skills Match: 50%
+- Experience Match: 25%
+- Role Relevance: 15%
+- Domain Match: 10%
+
+## LangGraph Workflow
+
+The agent is implemented as a compiled LangGraph pipeline:
+
+1. `analyze_user_profile`
+2. `analyze_job_listings`
+3. `rank_and_filter_jobs`
+4. `llama_recruiter_review`
+5. `format_strict_json_output`
+
+The public `recommend_jobs()` function invokes this graph.
+
+## Environment
+
+Create or update `.env`:
+
+```env
+GROQ_API_KEY=your_groq_api_key_here
+CAREER_AGENT_LLM_MODEL=llama-3.3-70b-versatile
+CAREER_AGENT_USE_LLM=true
+SERPAPI_API_KEY=your_serpapi_api_key_here
+```
+
+The default LLM model is `llama-3.3-70b-versatile`.
+
+To force deterministic fallback without Llama:
+
+```powershell
+$env:CAREER_AGENT_USE_LLM="false"
+```
+
+## Live Job Search
+
+Live search supports:
+
+- Remotive: remote jobs, no API key required.
+- SerpAPI Google Jobs: broader jobs search, API key required, can expose LinkedIn/Indeed apply sources.
+
+Run a live search from profile-only input:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m career_recommendation_agent.cli examples/profile_only_input.json --live-jobs --limit 10 --pretty
+```
+
+The default provider is `serpapi`, so the command above requires `SERPAPI_API_KEY` in `.env`.
+
+Explicit Remotive search:
+
+```powershell
+python -m career_recommendation_agent.cli examples/profile_only_input.json --live-jobs --job-provider remotive --limit 10 --pretty
+```
+
+Filter for LinkedIn apply sources:
+
+```powershell
+python -m career_recommendation_agent.cli examples/profile_only_input.json --live-jobs --job-provider serpapi --source-filter linkedin --limit 10 --pretty
+```
+
+Filter for Indeed apply sources:
+
+```powershell
+python -m career_recommendation_agent.cli examples/profile_only_input.json --live-jobs --job-provider serpapi --source-filter indeed --limit 10 --pretty
+```
+
+Override the query and location:
+
+```powershell
+python -m career_recommendation_agent.cli examples/profile_only_input.json --live-jobs --query "Python Developer" --location "United States" --limit 10 --pretty
+```
+
+## Provided Jobs Mode
+
+```powershell
+python -m career_recommendation_agent.cli examples/sample_input.json --pretty
+```
+
+## Localhost Web App
+
+Run the local web interface:
+
+```powershell
+$env:PYTHONPATH="src"
+python -m career_recommendation_agent.web_app --port 8000
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+The web form defaults to Remotive for temporary testing, so it works without a SerpAPI key. You can switch the provider dropdown to SerpAPI after adding `SERPAPI_API_KEY` in `.env`.
+
+## Production API Server
+
+Run the FastAPI/ASGI app locally:
+
+```powershell
+$env:PYTHONPATH="src"
+venv\Scripts\uvicorn.exe career_recommendation_agent.asgi:app --host 127.0.0.1 --port 8000
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+API docs:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+Docker build and run:
+
+```powershell
+docker build -t career-recommendation-agent .
+docker run --env-file .env -p 8000:8000 career-recommendation-agent
+```
+
+Production-style Docker Compose with PostgreSQL and HTTPS:
+
+```powershell
+copy .env.example .env
+# Edit DOMAIN, ACME_EMAIL, APP_SECRET_KEY, POSTGRES_PASSWORD, GROQ_API_KEY, SERPAPI_API_KEY
+docker compose up -d --build
+```
+
+This starts:
+
+- `app`: FastAPI career recommendation server.
+- `postgres`: production database container.
+- `caddy`: HTTPS reverse proxy with automatic TLS certificates for `DOMAIN`.
+
+For local Compose testing without a real domain, keep:
+
+```env
+DOMAIN=localhost
+```
+
+For a real cloud VM, point your domain DNS `A` record to the server IP, open ports `80` and `443`, set `DOMAIN=your-domain.com`, and run `docker compose up -d --build`.
+
+The old `career_recommendation_agent.web_app` server remains available for simple local demos, but FastAPI is the recommended production entrypoint.
+
+## Authentication And Database
+
+The FastAPI server includes a production foundation for accounts and recommendation history.
+
+SQLite is used by default:
+
+```env
+DATABASE_PATH=data/career_agent.db
+APP_SECRET_KEY=change-this-long-random-secret
+MAX_UPLOAD_BYTES=8388608
+RATE_LIMIT_WINDOW_SECONDS=60
+RATE_LIMIT_REQUESTS=80
+```
+
+PostgreSQL is used automatically when `DATABASE_URL` is set:
+
+```env
+DATABASE_URL=postgresql://career_agent:password@postgres:5432/career_agent
+```
+
+Available auth APIs:
+
+```text
+POST /api/auth/signup
+POST /api/auth/login
+GET  /api/auth/me
+GET  /api/recommendations/history
+GET  /api/saved-jobs
+POST /api/saved-jobs
+DELETE /api/saved-jobs/{saved_job_id}
+```
+
+When `POST /api/recommend` is called with an `Authorization: Bearer <token>` header, the recommendation run is saved to the user's history.
+
+The web dashboard supports:
+
+- Sign up, sign in, and logout.
+- Recommendation history for logged-in users.
+- Saved jobs with remove support.
+- CV/portfolio/keyword-based profile autofill.
+
+The API also includes upload file type checks, upload size limits, basic rate limiting, and security response headers.
+
+For real production deployment, use PostgreSQL, set a strong `APP_SECRET_KEY`, configure HTTPS through Caddy or your cloud load balancer, and use a managed secrets store for API keys.
+
+The web app also includes CV/portfolio autofill:
+
+1. Upload a `.txt`, `.pdf`, `.docx`, `.png`, `.jpg`, or scanned CV file, or paste portfolio text.
+2. Click `Auto Fill Profile`.
+3. Review the filled fields.
+4. Click `Find Recommended Jobs`.
+
+Logged-in users can click `Save Job` on a recommendation card and view saved jobs from the top navigation.
+
+For scanned/image-based PDFs, install Tesseract OCR on Windows and restart the server. The Python OCR packages are declared in `pyproject.toml`, but the Tesseract desktop executable is also required.
+
+## Project Structure
+
+```text
+career-recommendation-agent/
+|-- src/career_recommendation_agent/
+|   |-- agent.py
+|   |-- api.py
+|   |-- asgi.py
+|   |-- cli.py
+|   |-- database.py
+|   |-- job_sources.py
+|   |-- llm.py
+|   |-- models.py
+|   |-- scoring.py
+|   |-- security.py
+|   |-- text.py
+|   |-- web_app.py
+|   |-- web_index.html
+|   `-- workflow.py
+|-- examples/
+|   |-- profile_only_input.json
+|   `-- sample_input.json
+|-- tests/
+|   `-- test_agent.py
+|-- .env.example
+|-- README.md
+`-- pyproject.toml
+```
+
+## Input Format
+
+Provided jobs mode:
+
+```json
+{
+  "user_profile": {
+    "skills": ["Python", "FastAPI", "Machine Learning"],
+    "experience_years": 3,
+    "desired_role": "Machine Learning Engineer",
+    "preferences": {
+      "location": "Remote"
+    }
+  },
+  "job_listings": [
+    {
+      "job_title": "Machine Learning Engineer",
+      "company": "Example AI",
+      "job_description": "Build ML services using Python and APIs.",
+      "required_skills": ["Python", "Machine Learning", "FastAPI"],
+      "experience_level": "Mid",
+      "location": "Remote",
+      "apply_url": "https://example.com/apply",
+      "source_platform": "Provided Dataset"
+    }
+  ]
+}
+```
+
+Live jobs mode can omit `job_listings`.
+
+## Output Format
+
+The CLI prints strict JSON:
+
+```json
+{
+  "user_profile_summary": {
+    "target_role": "Machine Learning Engineer",
+    "skills": ["Python", "FastAPI", "Machine Learning"],
+    "experience_level": "Mid",
+    "domain": "AI / Machine Learning"
+  },
+  "recommended_jobs": []
+}
+```
+
+## Notes
+
+- The project does not scrape LinkedIn or Indeed directly.
+- Live results depend on the configured API provider and the apply sources it returns.
+- Jobs with match scores below `50` are filtered out when there are enough listings to rank meaningfully.
+- Ranking tie-breakers prioritize skills match, then role relevance.

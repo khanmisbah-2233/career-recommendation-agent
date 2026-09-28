@@ -1,0 +1,16 @@
+{
+  "user_profile": {
+    "skills": ["Python", "FastAPI", "Machine Learning", "SQL", "Docker"],
+    "experience_years": 3,
+    "experience": [
+      "Built production APIs for machine learning services.",
+      "Designed SQL-backed data workflows and Dockerized deployments."
+    ],
+    "education": ["BS Computer Science"],
+    "projects": ["Resume parser and AI career recommendation system"],
+    "desired_role": "Machine Learning Engineer",
+    "preferences": {
+      "location": "Remote"
+    }
+  }
+}
